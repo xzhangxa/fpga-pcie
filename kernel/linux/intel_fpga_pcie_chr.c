@@ -310,7 +310,11 @@ static int chr_mmap(struct file *filp, struct vm_area_struct *vma)
         return -EINVAL;
     }
     vma->vm_ops = &intel_fpga_vm_ops;
+#if KERNEL_VERSION(6, 3, 0) <= LINUX_VERSION_CODE
+    vm_flags_set(vma, VM_PFNMAP | VM_DONTCOPY | VM_DONTEXPAND);
+#else
     vma->vm_flags |= VM_PFNMAP | VM_DONTCOPY | VM_DONTEXPAND;
+#endif
     vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
     vma->vm_private_data = dev_bk;
 
@@ -533,7 +537,7 @@ static ssize_t chr_access(struct file *filp, const char __user *buf,
     chr_dev_bk = filp->private_data;
     dev_bk = chr_dev_bk->dev_bk;
 
-    if(! access_ok(VERIFY_WRITE, buf, sizeof(buf))) {
+    if(! access_ok(buf, sizeof(buf))) {
         INTEL_FPGA_PCIE_DEBUG("buf is not ok to access");
         return -EFAULT;
     }
